@@ -3,7 +3,8 @@ using HTTP, URIs
 function build_response(req::HTTP.Request)
     query = queryparams(URI(req.target)) # not sure why we can't use .url, it's empty
     msg = URIs.unescapeuri(query["message"])
-    str = draw_spiral(msg; base = get(query, "base", 200_003), as_string = true)
+    base = haskey(query, "base") ? parse(Int, query["base"]) : 200_003
+    str = draw_spiral(msg; base = base, as_string = true)
     return HTTP.Response(
         200,
         ["Content-Type" => "image/svg+xml"],
