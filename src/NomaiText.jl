@@ -18,6 +18,7 @@ include("oracles.jl")
 include("glyphgrid2.jl") # for development only, pick this or above
 include("geometry.jl")
 include("grid_layout.jl")
+include("server.jl")
 
 
 
