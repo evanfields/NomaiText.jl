@@ -113,9 +113,13 @@ function draw(gl::AbstractGridLayout, as_string = false)
     return pic
 end
 
-"Draw a message in a spiral"
-function draw_spiral(str; base = 256, as_string = false)
+"""Draw a message in a spiral.
+TODO: full docstring on this function."""
+function draw_spiral(str; base = 256, as_string = false, handwriting = 0)
     grid = grid_from_oracle!(Oracle(str; base = base))
+    if handwriting > 0
+        grid = handwrite(grid, handwriting)
+    end
     needed_length = 3.5 * K * size(grid.grid, 1)
     local spath
     period = pi/4
