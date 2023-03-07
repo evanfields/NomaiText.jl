@@ -52,7 +52,7 @@ mutable struct GlyphGrid
     end
 end
 
-"""Add a Glyph at point (i,j) in a GlyphGrid."""
+"""Add a deep copy of Glyph at point (i,j) in a GlyphGrid."""
 function addpoint!(gg::GlyphGrid, glyph::Glyph, i, j)
     # may need to expand the grid
     if i > size(gg.grid, 1)
@@ -64,7 +64,7 @@ function addpoint!(gg::GlyphGrid, glyph::Glyph, i, j)
     if hasglyph(gg.grid[i,j])
         @warn "Tried to add point $((i,j)) but it was already used"
     end
-    gg.grid[i,j] = glyph
+    gg.grid[i,j] = deepcopy(glyph)
 end
 
 """The number of populated columns (x-y space, aka rows i-j space) in a `GlyphGrid`."""

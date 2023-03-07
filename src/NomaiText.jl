@@ -19,6 +19,7 @@ include("glyphgrid2.jl") # for development only, pick this or above
 include("geometry.jl")
 include("grid_layout.jl")
 include("server.jl")
+include("handwriting.jl")
 
 
 
@@ -175,6 +176,10 @@ function vishelp(objects)
             i > n && continue
             @layer begin
                 translate(pt)
+                @layer begin
+                    setcolor("blue")
+                    circle(O, 1, :fill)
+                end
                 draw(objects[i])
             end
         end
