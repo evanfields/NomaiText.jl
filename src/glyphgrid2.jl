@@ -152,7 +152,7 @@ function next!(gg::GlyphGrid, oracle::Oracle, glyph_choices = KNOWN_GLYPHS)
         addpoint!(gg, ask!(oracle, glyph_choices), loc...)
     end
     # for each head, add a connection between the current head and the next glyph
-    for (head, new_pt) in zip(path_heads, next_pts)
+    for (head, new_pt) in unique(zip(path_heads, next_pts))
         _connect_glyphs!(gg, oracle, head, new_pt)
     end
 end
