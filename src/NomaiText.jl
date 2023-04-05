@@ -190,5 +190,15 @@ function vishelp(objects)
     end width height
 end
 
+function julia_main()::Cint
+    if isempty(ARGS)
+        println("No message provided, exiting.")
+        return 0
+    end
+    msg = ARGS[1]
+    svg_str = draw_spiral(msg; as_string = true)
+    write("nomai.svg", svg_str)
+    return 0
+end
 
 end # module NomaiText
