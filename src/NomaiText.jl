@@ -149,8 +149,9 @@ Lambda. `argdict` must contain a `"message"` key with a string value, which is p
 the positional argument to `draw_spiral(::String)`. Any further key-value pairs in
 `argdict` are passed as keyword arguments."""
 function draw_spiral(argdict)
-    str = pop!(argdict, "message")
-    return draw_spiral(str; [Symbol(k) => v for (k,v) in argdict]...)
+    args = deepcopy(argdict) # don't modify passed dict when we pop!
+    message = pop!(args, "message")
+    return draw_spiral(message; [Symbol(k) => v for (k,v) in args]...)
 end
 
 
