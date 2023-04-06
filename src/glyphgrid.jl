@@ -1,6 +1,3 @@
-# This file started off as a copy of GlyphGrid.jl on 2023-2-26
-# I'm exploring some other ways of organizing glyphs here
-
 const ROWS = 3
 const MIDLINE = 1 + ROWS ÷ 2
 const DESIRED_OPTIONS = 2 # how many options do we want for next grid point?

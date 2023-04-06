@@ -26,8 +26,12 @@ struct Glyph
     annotation::Union{PolySpec, Nothing}
 end
 
+# scale glyphs
 *(g::Glyph, r::Real) = r * g
 *(r::Real, g::Glyph) = Glyph(r * g.core, isnothing(g.annotation) ? nothing : r * g.annotation)
 
 const MaybeGlyph = Union{Glyph, Nothing}
 hasglyph(mg::MaybeGlyph) = !isnothing(mg)
+
+"""Return the basic Glyph for a GlyphDigit."""
+core_glyph(::Type{T}) where {T <: AbstractGlyphDigit} = Glyph(_core_poly(T), nothing)

@@ -1,3 +1,12 @@
+"""Get all `Point`s in a `Glyph`."""
+function allpoints(g::Glyph)
+    if isnothing(g.annotation)
+        return g.core.points
+    else
+        return vcat(g.core.points, g.annotation.points)
+    end
+end
+
 """Whether two lines cross in their interiors. Touching endpoints or crossing when the
 lines are extended to infinity do not count."""
 function _linescross(ptA, ptB, ptC, ptD)

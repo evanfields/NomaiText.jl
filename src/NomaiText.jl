@@ -11,46 +11,36 @@ import Base: *
 ##
 K::Float64 = 20.0 # size of glyphs
 
-
+##
+# Define core glyph digit shapes. First types, then the shapes of our 16 "core digits",
+# and finally a human-curated set of core glyphs with annotations.
+##
 include("glyph_types.jl")
-include("oracles.jl")
-#include("GlyphGrid.jl")
-include("glyphgrid2.jl") # for development only, pick this or above
-include("geometry.jl")
-include("grid_layout.jl")
-include("server.jl")
-include("handwriting.jl")
-
-
-
-##
-# Define core glyph digit shapes
-##
 include("digit_shapes.jl")
-
-"""Return the basic Glyph for a GlyphDigit."""
-core_glyph(::Type{T}) where {T <: AbstractGlyphDigit} = Glyph(_core_poly(T), nothing)
-
-##
-# Define a list of known glyphs
-# These are a human curated set of core glyphs with annotations applied.
-# Some combinations of core glyph and annotation don't look great, so we don't use them.
-##
 include("known_glyphs.jl") # defines KNOWN_GLYPHS
 
+##
+# Define Oracle, a type representing a message or other data as a BigInt and using
+# that message to answer a sequence of "which choice?" questions.
+##
+include("oracles.jl")
+
+include("geometry.jl") # geometric queries on glyphs and paths
 
 ##
-# Geometric queries on glyphs
+# GlyphGrid is responsible for knowing what sequence of glyphs and connections to draw,
+# but doesn't know about typesetting. It's the Nomai equivalent of a sequence of characters.
+# Slight exception: for implementation reasons handwriting is implemented at the GlyphGrid
+# level rather than the typesetting level.
 ##
+include("glyphgrid.jl")
+include("handwriting.jl")
 
-"""Get all `Point`s in a `Glyph`."""
-function allpoints(g::Glyph)
-    if isnothing(g.annotation)
-        return g.core.points
-    else
-        return vcat(g.core.points, g.annotation.points)
-    end
-end
+##
+# Layouts are responsible for typesetting. This defines linear and path (used for spiral)
+# layouts.
+#
+include("grid_layout.jl")
 
 
 ##
@@ -113,9 +103,27 @@ function draw(gl::AbstractGridLayout, as_string = false)
     return pic
 end
 
-"""Draw a message in a spiral.
-TODO: full docstring on this function."""
-function draw_spiral(str; base = 256, as_string = false, handwriting = 0)
+"""
+    draw_spiral(message::String; base = 256, as_string = false, handwriting = 0)
+
+Draw a message in a spiral. Keyword arguments:
+- `base::Int = 256`: Base of number system used to represent strings as a sequence of
+    integers. To ensure that distinct messages cannot be rendered the same, `base`
+    should be larger than the maximum codepoint you wish to support. Thus base 256
+    works well for ASCII and base 200_000 works well for a set of unicode covering
+    almost all symbols you're likely to encounter. Note that even with a smaller
+    base, the probability that two distinct messages render the same is astronomically
+    tiny. Spiral length is proportional to `log(base)`.
+- `as_string::Bool = false`: controls return, see below.
+- `handwriting::Float64 = 0`: Non-negative real number indicating the amount of glyph
+    imperfection as if due to handwriting. See `NomaiText.handwrite` for more details.
+
+Return:
+* `as_string = true`: return the drawing SVG as a string
+* `as_string = false`: return a preview of the drawing; only renders nicely in VSCode,
+    Pluto, etc.
+"""
+function draw_spiral(str::String; base = 256, as_string = false, handwriting = 0)
     grid = grid_from_oracle!(Oracle(str; base = base))
     if handwriting > 0
         grid = handwrite(grid, handwriting)
@@ -126,16 +134,23 @@ function draw_spiral(str; base = 256, as_string = false, handwriting = 0)
     Drawing(100, 100, :svg) # needed so we can draw spirals and get their lengths
     while true
         newpath()
-        spiral(164, .35, log = true, action = :path, period = period)
+        spiral(164, .29, log = true, action = :path, period = period)
         spath = storepath()
         pathlength(spath) >= needed_length && break
         period += pi/24
     end
-    @info "" period
     newpath()
     rotation_needed = pi - mod(period, 2pi)
     spath = rotatepath(spath, rotation_needed)
     draw(PathGridLayout(grid, spath), as_string)
+end
+"""Draw a message in a spiral with a Dict argument - useful for use with Jot.jl and AWS
+Lambda. `argdict` must contain a `"message"` key with a string value, which is passed as
+the positional argument to `draw_spiral(::String)`. Any further key-value pairs in
+`argdict` are passed as keyword arguments."""
+function draw_spiral(argdict)
+    str = pop!(argdict, "message")
+    return draw_spiral(str; [Symbol(k) => v for (k,v) in argdict]...)
 end
 
 
@@ -188,17 +203,6 @@ function vishelp(objects)
             end
         end
     end width height
-end
-
-function julia_main()::Cint
-    if isempty(ARGS)
-        println("No message provided, exiting.")
-        return 0
-    end
-    msg = ARGS[1]
-    svg_str = draw_spiral(msg; as_string = true)
-    write("nomai.svg", svg_str)
-    return 0
 end
 
 end # module NomaiText
