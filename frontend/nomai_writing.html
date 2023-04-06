@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nomai writing</title>
+    <style>
+    body {
+        background-color: antiquewhite;
+        margin-left: 60px;
+        margin-right: 60px;
+        }
+    label, button {
+        color: #104e8b;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 16px;
+        }
+    input[type='number']{
+        width: 96px;
+        }
+    form {
+        width: 50em;
+        max-width: 80%;
+        }
+    .nomai_writing {
+        width: 40%; /* set to 95% on API response */
+        }
+    .nomai_writing svg {
+        width: 100%;
+        height: auto;
+        }
+    </style>
+    <script>
+        // get a nomai drawing by calling extracting form elements and hitting the API
+        var last_response;
+        var callAPI = () => {
+            // read form
+            message = document.getElementById('message').value;
+            handwriting = parseFloat(document.getElementById('handwriting').value);
+            base = parseInt(document.getElementById('base').value);
+            seed = parseInt(document.getElementById('seed').value);
+            // length limit client-side
+            if (Math.log(base) * message.length > 11091) {
+                div = document.getElementById('nomai_result')
+                div.innerHTML = "Error: Message too long, try reducing message length or base. Max supported length is 2000 characters at base 256.";
+                return
+            }
+            // instantiate a headers object
+            var myHeaders = new Headers();
+            // add content type header to object
+            myHeaders.append("Content-Type", "application/json");
+            // using built in JSON utility package turn object to string and store in a variable
+            var body_text = JSON.stringify({
+                "as_string": true,
+                "handwriting": handwriting,
+                "message": message,
+                "id": "nomai_svg",
+                "base": base,
+                "seed": seed,
+            });
+            // create a JSON object with parameters for API call and store in a variable
+            var requestOptions = {
+                method: 'POST',
+                headers: myHeaders,
+                body: body_text,
+                redirect: 'follow',
+            };
+            // make API call with parameters and use promises to get response
+            fetch("https://b37zeu2ehh.execute-api.us-east-2.amazonaws.com/dev", requestOptions) // Nomai API
+            .then(response => {
+                return response.text();
+            })
+            .then(result => {
+                last_response = result;
+                div = document.getElementById('nomai_result');
+                div.style.width = "95%";
+                div.innerHTML = JSON.parse(result);
+            })
+            .catch(error => console.log('error', error));
+        }
+    </script>
+</head>
+
+<body>
+<form>
+    <label for="message">Message (full unicode is supported 🚀):</label><br>
+    <textarea id="message" name="message" rows="2" cols="40"></textarea><br>
+    <p>
+        <label>Handwriting factor:</label><br>
+        <input type="text" id="handwriting" size="1" value="0.3"> ≥ 0, higher numbers messier. 0=computer, 0.5=clean handwriting, 1.0=messy, 2=child
+    </p>
+    <p>
+        <label>Encoding base:</label><br>
+        <input type="number" id="base" min="2" max="200000000" size="1" value="200000"> Integer ≥ 2, ideally ≥ the highest unicode codepoint in your character set. ≥ 256 to ensure ASCII messages have unique Nomai spirals, ≥ 200,000 to ensure Unicode uniqueness. Spiral length is proportional to log(base).
+    </p>
+    <p>
+        <label>Seed:</label><br>
+        <input type="number" id="seed" min="0" max="9999" size="1" value="47"> Integer ≥ 0, seed for handwriting randomness. Adjust to see a different handwriting random realization at a given handwriting factor.
+    </p>
+    <button type="button" onclick="callAPI()">Generate</button> (May take a few seconds)
+</form>
+<div id="nomai_result" class="nomai_writing">
+    <svg id="svgID" width="300" height="200">
+        <rect width="100%" height="100%" fill="antiquewhite" />
+    </svg>
+</div>
+<div id="footer">
+    <p>Source code on <a href="https://github.com/evanfields/NomaiText.jl">Github</a>; feel free to report issues or suggestions there.</p>
+    <p>Made with <a href="https://github.com/JuliaGraphics/Luxor.jl">Luxor.jl</a> and <a href="https://github.com/harris-chris/Jot.jl">Jot.jl</a>. Many thanks to the authors for their packages and help.
+</div>
+</body>
+
+</html>
