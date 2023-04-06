@@ -1,6 +1,7 @@
 module NomaiText
 using Luxor
 using Statistics: mean
+using Random: Xoshiro
 
 export grid_from_oracle!, Oracle, draw_spiral
 
@@ -117,16 +118,24 @@ Draw a message in a spiral. Keyword arguments:
 - `as_string::Bool = false`: controls return, see below.
 - `handwriting::Float64 = 0`: Non-negative real number indicating the amount of glyph
     imperfection as if due to handwriting. See `NomaiText.handwrite` for more details.
+- `seed::Int = 47`: Integer used as RNG seed for handwriting. Ignored if `handwriting = 0`.
 
 Return:
 * `as_string = true`: return the drawing SVG as a string
 * `as_string = false`: return a preview of the drawing; only renders nicely in VSCode,
     Pluto, etc.
 """
-function draw_spiral(str::String; base = 256, as_string = false, handwriting = 0)
+function draw_spiral(
+    str::String;
+    base = 256,
+    as_string = false,
+    handwriting = 0,
+    seed = 47
+)
     grid = grid_from_oracle!(Oracle(str; base = base))
     if handwriting > 0
-        grid = handwrite(grid, handwriting)
+        rng = Xoshiro(seed)
+        grid = handwrite(grid, handwriting, rng)
     end
     needed_length = 3.5 * K * size(grid.grid, 1)
     local spath
@@ -146,12 +155,25 @@ function draw_spiral(str::String; base = 256, as_string = false, handwriting = 0
 end
 """Draw a message in a spiral with a Dict argument - useful for use with Jot.jl and AWS
 Lambda. `argdict` must contain a `"message"` key with a string value, which is passed as
-the positional argument to `draw_spiral(::String)`. Any further key-value pairs in
-`argdict` are passed as keyword arguments."""
+the positional argument to `draw_spiral(::String)`. Optionally include an `"id"` key with
+a string value, which is used for the `id` of the resulting SVG.
+Any further key-value pairs in `argdict` are passed as keyword arguments."""
 function draw_spiral(argdict)
     args = deepcopy(argdict) # don't modify passed dict when we pop!
     message = pop!(args, "message")
-    return draw_spiral(message; [Symbol(k) => v for (k,v) in args]...)
+    if haskey(args, "id")
+        id = pop!(args, "id")
+    else
+        id = "nomai"
+    end
+    svg = draw_spiral(message; [Symbol(k) => v for (k,v) in args]...)
+    if typeof(svg) == String
+        # clean up the ID so the resulting SVG doesn't have a random-ish ID field
+        r = r"(id\s*=\s*)\"([^\"]*)\"" # (id=)"(actual id)"
+        return replace(svg, r => "id=\"$(id)\"")
+    else
+        return svg
+    end
 end
 
 
