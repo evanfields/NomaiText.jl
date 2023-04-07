@@ -34,10 +34,10 @@
         var last_response;
         var callAPI = () => {
             // read form
-            message = document.getElementById('message').value;
-            handwriting = parseFloat(document.getElementById('handwriting').value);
-            base = parseInt(document.getElementById('base').value);
-            seed = parseInt(document.getElementById('seed').value);
+            var message = document.getElementById('message').value;
+            var handwriting = parseFloat(document.getElementById('handwriting').value);
+            var base = parseInt(document.getElementById('base').value);
+            var seed = parseInt(document.getElementById('seed').value);
             // length limit client-side
             if (Math.log(base) * message.length > 11091) {
                 div = document.getElementById('nomai_result')
@@ -71,9 +71,16 @@
             })
             .then(result => {
                 last_response = result;
-                div = document.getElementById('nomai_result');
+                // set svg for display
+                var div = document.getElementById('nomai_result');
                 div.style.width = "95%";
                 div.innerHTML = JSON.parse(result);
+                // download link
+                var blob = new Blob([document.getElementById('nomai_result').innerHTML], {type: "image/svg+xml"});
+                var url = URL.createObjectURL(blob);
+                div = document.getElementById('download_link');
+                div.innerText = 'Download (right click => save as)';
+                div.href = url;
             })
             .catch(error => console.log('error', error));
         }
@@ -103,6 +110,7 @@
         <rect width="100%" height="100%" fill="antiquewhite" />
     </svg>
 </div>
+<a id="download_link"></a>
 <div id="footer">
     <p>Source code on <a href="https://github.com/evanfields/NomaiText.jl">Github</a>; feel free to report issues or suggestions there.</p>
     <p>Made with <a href="https://github.com/JuliaGraphics/Luxor.jl">Luxor.jl</a> and <a href="https://github.com/harris-chris/Jot.jl">Jot.jl</a>. Many thanks to the authors for their packages and help.
