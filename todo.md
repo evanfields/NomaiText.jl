@@ -24,11 +24,18 @@ using a strict grid layout. Maybe try varying glyph size a bit?
     and have the existing paths join at that new sentinel. Then the next word can
     begin from a fixed glyph (the sentinel) at a fixed position (row), so changes
     to one word in the input message won't affect the rest of the embedding.
-5. Re-enable server functionality (see commit `b2bff2566b`) with a package extension.
+5. Somewhat relatedly, generate special sentinel glyphs when an `Oracle` is exhausted so
+    that we can distinguish between an `Oracle` wrapping back on itself and a longer
+    `Oracle` with the same sequence of initial answers. E.g. two `Oracles` that respond to
+    which-of-three questions respectively `(2,1,3)` and `(2,1,3,2)` will look the same if
+    ask exactly 4 questions. This means in rare cases distinct messages can have the same
+    spiral when an `Oracle` needs to loop back on itself to complete a glyph that another
+    similar `Oracle` can complete exactly.
+6. Re-enable server functionality (see commit `b2bff2566b`) with a package extension.
 We don't need it as a full dependency, especially for use on AWS Lambda.
-6. More glyphs and/or annotations?
-7. Refactor so that core glyph digits aren't in the type system? This stemmed from an
+7. More glyphs and/or annotations?
+8. Refactor so that core glyph digits aren't in the type system? This stemmed from an
     earlier design which didn't end up materializing. Or use the type system more so
     that we actually benefit from dispatch. As-is, we could just have an array of
     core glyph digits without defining any types.
-8. Probably write some tests, we should be adults after all...
+9. Probably write some tests, we should be adults after all...

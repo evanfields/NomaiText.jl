@@ -21,6 +21,10 @@
         width: 50em;
         max-width: 80%;
         }
+    .form_options {
+        display: none;
+        overflow: hidden;
+        }
     .nomai_writing {
         width: 40%; /* set to 95% on API response */
         }
@@ -46,9 +50,8 @@
             }
             // instantiate a headers object
             var myHeaders = new Headers();
-            // add content type header to object
             myHeaders.append("Content-Type", "application/json");
-            // using built in JSON utility package turn object to string and store in a variable
+            // form inputs
             var body_text = JSON.stringify({
                 "as_string": true,
                 "handwriting": handwriting,
@@ -90,19 +93,22 @@
 <body>
 <form>
     <label for="message">Message (full unicode is supported 🚀):</label><br>
-    <textarea id="message" name="message" rows="2" cols="40"></textarea><br>
-    <p>
-        <label>Handwriting factor:</label><br>
-        <input type="text" id="handwriting" size="1" value="0.3"> ≥ 0, higher numbers messier. 0=computer, 0.5=clean handwriting, 1.0=messy, 2=child
-    </p>
-    <p>
-        <label>Encoding base:</label><br>
-        <input type="number" id="base" min="2" max="200000000" size="1" value="200000"> Integer ≥ 2, ideally ≥ the highest unicode codepoint in your character set. ≥ 256 to ensure ASCII messages have unique Nomai spirals, ≥ 200,000 to ensure Unicode uniqueness. Spiral length is proportional to log(base).
-    </p>
-    <p>
-        <label>Seed:</label><br>
-        <input type="number" id="seed" min="0" max="9999" size="1" value="47"> Integer ≥ 0, seed for handwriting randomness. Adjust to see a different handwriting random realization at a given handwriting factor.
-    </p>
+    <textarea id="message" name="message" rows="2" cols="40" placeholder="Enter a message to be rendered as a Nomai spiral."></textarea><br>
+    <button type="button" id="options_button" class="collapsible">Show/hide options</button>
+    <div class="form_options">
+        <p>
+            <label>Encoding base:</label><br>
+            <input type="number" id="base" min="2" max="200000000" size="1" value="200000"> Integer ≥ 2, ideally ≥ the highest unicode codepoint in your character set. ≥ 256 to ensure ASCII messages have unique Nomai spirals, ≥ 200,000 to ensure Unicode message uniqueness. Spiral length is proportional to log(base).
+        </p>
+        <p>
+            <label>Handwriting factor:</label><br>
+            <input type="text" id="handwriting" size="1" value="0.3"> ≥ 0, higher numbers messier. 0=computer, 0.5=clean handwriting, 1.0=messy, 2=child
+        </p>
+        <p>
+            <label>Seed:</label><br>
+            <input type="number" id="seed" min="0" max="9999" size="1" value="47"> Integer ≥ 0, seed for handwriting randomness. Adjust to see a different handwriting random realization at a given handwriting factor.
+        </p>
+    </div>
     <button type="button" onclick="callAPI()">Generate</button> (May take a few seconds)
 </form>
 <div id="nomai_result" class="nomai_writing">
@@ -112,9 +118,23 @@
 </div>
 <a id="download_link"></a>
 <div id="footer">
+    <p><a href="https://evanfields.github.io/Nomai-Writing/">Blog post</a> explaining what this is, motivation, and a few technical details.</p>
     <p>Source code on <a href="https://github.com/evanfields/NomaiText.jl">Github</a>; feel free to report issues or suggestions there.</p>
     <p>Made with <a href="https://github.com/JuliaGraphics/Luxor.jl">Luxor.jl</a> and <a href="https://github.com/harris-chris/Jot.jl">Jot.jl</a>. Many thanks to the authors for their packages and help.
 </div>
+
+<script>
+    // show/hide form options on click
+    var options_button = document.getElementById('options_button');
+    options_button.addEventListener("click", function() {
+        var content = this.nextElementSibling;
+        if (content.style.display === "block") {
+            content.style.display = "none";
+        } else {
+            content.style.display = "block";
+        }
+    });
+</script>
 </body>
 
 </html>
