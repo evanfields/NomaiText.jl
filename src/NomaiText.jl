@@ -13,29 +13,34 @@ import Base: *
 K::Float64 = 20.0 # size of glyphs
 
 ##
-# Core glyph types, 16 digit shapes, and curated glyphs with annotations.
+# Define core glyph digit shapes. First types, then the shapes of our 16 "core digits",
+# and finally a human-curated set of core glyphs with annotations.
 ##
 include("glyph_types.jl")
 include("digit_shapes.jl")
 include("known_glyphs.jl") # defines KNOWN_GLYPHS
 
 ##
-# Oracle: encodes a message as a BigInt to answer "which of k?" questions deterministically.
+# Define Oracle, a type representing a message or other data as a BigInt and using
+# that message to answer a sequence of "which choice?" questions.
 ##
 include("oracles.jl")
 
 include("geometry.jl") # geometric queries on glyphs and paths
 
 ##
-# GlyphGrid tracks what sequence of glyphs and connections to draw (like a character sequence).
-# Layouts handle typesetting; handwriting perturbations are applied at the GlyphGrid level.
+# GlyphGrid is responsible for knowing what sequence of glyphs and connections to draw,
+# but doesn't know about typesetting. It's the Nomai equivalent of a sequence of characters.
+# Slight exception: for implementation reasons handwriting is implemented at the GlyphGrid
+# level rather than the typesetting level.
 ##
 include("glyphgrid.jl")
 include("handwriting.jl")
 
 ##
-# Layouts handle typesetting: linear and path (spiral) layouts.
-##
+# Layouts are responsible for typesetting. This defines linear and path (used for spiral)
+# layouts.
+#
 include("grid_layout.jl")
 
 
@@ -163,7 +168,8 @@ function draw_spiral(argdict)
     end
     svg = draw_spiral(message; [Symbol(k) => v for (k,v) in args]...)
     if typeof(svg) == String
-        r = r"(id\s*=\s*)\"([^\"]*)\"" # replace auto-generated SVG id
+        # clean up the ID so the resulting SVG doesn't have a random-ish ID field
+        r = r"(id\s*=\s*)\"([^\"]*)\"" # (id=)"(actual id)"
         return replace(svg, r => "id=\"$(id)\"")
     else
         return svg

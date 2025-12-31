@@ -4,7 +4,9 @@ using Luxor
 function _core_poly end
 let # square glyphs 0-3
     r = sqrt(2) * K/2
-    # pts[1..4] arranged clockwise from bottom-right: [2 1; 3 4] in matrix form
+    # pts[1:4] clockwise from bottom-right:
+    # 3 4
+    # 2 1
     pts = polar.(r, [pi/4 + pi/2 * i for i in 0:3])
     
     NomaiText._core_poly(::Type{GlyphDigit0}) = PolySpec(
