@@ -11,7 +11,7 @@ end
 lines are extended to infinity do not count."""
 function _linescross(ptA, ptB, ptC, ptD)
     crosses, pt = intersectionlines(ptA, ptB, ptC, ptD; crossingonly = true)
-    # if they don't cross, no nee dto check the crossing point
+    # if they don't cross, no need to check the crossing point
     !crosses && return false
     # if the crossing point is one of the endpoints, we count it as not crossing
     return pt ∉ (ptA, ptB, ptC, ptD)
@@ -38,8 +38,8 @@ intersects(ptA::Point, ptB::Point, ::Nothing) = false
 """
     intersects(psA, psB, offset::Point)
 
-Whether two polygons defined by `psA` and `psB` intersect when `psB` is offset by `offset`.
-If either of `psA` or `psB` is nothing, the return false since there's no intersection."""
+Whether two polygons intersect when `psB` is offset by `offset`.
+Returns false if either argument is nothing."""
 function intersects(psA::PolySpec, psB::PolySpec, offset::Point)
     length(psB.points) < 2 && return false
     n_b = length(psB.points)
@@ -74,8 +74,7 @@ end
 # "Missing" Luxor utilities for manipulating stored paths
 ##
 
-"""Given a stored path `p``, return a new stored path equivalent to rotating `p` by
-`theta` radians around the origin. Follows standard Luxor rotation logic."""
+"""Return a new stored path rotated by `theta` radians around the origin (clockwise in Y-down)."""
 function rotatepath(p::Path, theta)
     return Path(_rotate_path_el.(p.path, theta))
 end

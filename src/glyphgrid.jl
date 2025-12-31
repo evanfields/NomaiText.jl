@@ -1,3 +1,8 @@
+# Naming convention: "rows", "cols", etc. refer to the DRAWN output.
+# Since we map (i,j) → (x,y) to keep coordinate order consistent Julia-to-Luxor,
+# the Julia matrix is transposed relative to these names: ROWS is the Julia column
+# count, and "col" functions operate on Julia rows.
+
 const ROWS = 3
 const MIDLINE = 1 + ROWS ÷ 2
 const DESIRED_OPTIONS = 2 # how many options do we want for next grid point?
@@ -22,18 +27,13 @@ end
 """
     GlyphGrid(n_paths::Int)
 
-Construct a `GlyphGrid` with `n_paths` paths. Initialize with 1 column;
-`GlyphGrids` will automatically expand as needed when points are added.
+Construct a `GlyphGrid` with `n_paths` branching paths. The grid matrix starts small
+and expands horizontally as glyphs are added.
 
-A `GlyphGrid` is responsible for building and tracking the sequence of `Glyphs`
-within an abstract grid system. The `GlyphGrid` does not know how to map abstract grid
-locations to coordinates in drawing space. For these functions, see `AbstractGlyphLayout`.
+Indexing: `grid[i, j]` uses Julia matrix indexing. When drawn, `i` maps to Luxor's
+x-axis (horizontal) and `j` to y-axis (vertical, fixed at `ROWS=3`).
 
-`GlyphGrid`s store `Glyph`s in an array in `i-j`` space, which you can think of as
-respectively indicating the row and column of an ordinary Julia matrix. When drawn via
-a layout, `i` corresponds to horizontal `x`, and `j` to vertical `y`. Since Luxor uses
-a Y-down coordinate system, it's as if the drawn grid is the transpose of the Julia
-array stored in a `GlyphGrid`'s `grid` field.
+Mapping grid locations to drawing coordinates is handled by `AbstractGridLayout` subtypes.
 """
 mutable struct GlyphGrid
     grid::Matrix{MaybeGlyph}
@@ -42,7 +42,7 @@ mutable struct GlyphGrid
 
     function GlyphGrid(n_paths::Int)
         return new(
-            Array{MaybeGlyph}(nothing, n_paths, ROWS),
+            Array{MaybeGlyph}(nothing, n_paths, ROWS), # n_paths is just initial capacity; expands as needed
             [Coord[] for _ in 1:n_paths],
             GlyphConnection[]
         )
@@ -64,15 +64,14 @@ function addpoint!(gg::GlyphGrid, glyph::Glyph, i, j)
     gg.grid[i,j] = deepcopy(glyph)
 end
 
-"""The number of populated columns (x-y space, aka rows i-j space) in a `GlyphGrid`."""
+"""The number of populated i-indices (horizontal positions when drawn) in a `GlyphGrid`."""
 function _num_cols(gg::GlyphGrid) 
     max_i = findlast(vec(sum(hasglyph, gg.grid; dims=2)) .> 0)
     isnothing(max_i) && return 0
     return max_i
 end
 
-"""Trim unused columns (x-y) space [aka rows in i-j space] from the end of a
-GlyphGrid's grid. Return the modified GlyphGrid."""
+"""Trim unused i-indices from the end of a GlyphGrid's grid. Return the modified GlyphGrid."""
 function truncate!(gg::GlyphGrid)
     ncols = _num_cols(gg)
     gg.grid = gg.grid[1:ncols, :]

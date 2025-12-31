@@ -27,7 +27,5 @@ function ask!(o::Oracle, k::Int)
     end
     return answer + 1
 end
-"""Ask an `Oracle` to choose from a finit set `options`, update its internal state, and
-return its choice. For now, `options` must have indexing 1:length(options). If needed
-we can relax that in the future."""
+"""Ask an `Oracle` to choose from a finite collection `options` and return its choice."""
 ask!(o::Oracle, options) = return options[ask!(o, length(options))]

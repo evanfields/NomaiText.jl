@@ -20,7 +20,7 @@ end
 *(ps::PolySpec, r::Real) = r * ps
 *(r::Real, ps::PolySpec) = PolySpec(r .* ps.points, ps.close)
 
-"""A glyph to be drawn: a `core`` glyph shape plus optional `annotation`."""
+"""A glyph to be drawn: a `core` shape plus optional `annotation`."""
 struct Glyph
     core::PolySpec
     annotation::Union{PolySpec, Nothing}
