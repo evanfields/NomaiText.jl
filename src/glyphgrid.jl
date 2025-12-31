@@ -39,14 +39,66 @@ mutable struct GlyphGrid
     grid::Matrix{MaybeGlyph}
     paths::Vector{Vector{Coord}}
     connections::Vector{GlyphConnection}
+end
 
-    function GlyphGrid(n_paths::Int)
-        return new(
-            Array{MaybeGlyph}(nothing, n_paths, ROWS), # n_paths is just initial capacity; expands as needed
-            [Coord[] for _ in 1:n_paths],
-            GlyphConnection[]
-        )
+function GlyphGrid(n_paths::Int)
+    return GlyphGrid(
+        Array{MaybeGlyph}(nothing, n_paths, ROWS), # n_paths is just initial capacity; expands as needed
+        [Coord[] for _ in 1:n_paths],
+        GlyphConnection[]
+    )
+end
+
+"Build a complete grid from an Oracle, consuming the Oracle in the process."
+function grid_from_oracle!(oracle::Oracle; n_paths = 2)
+    gg = GlyphGrid(2)
+    while !iscomplete(oracle)
+        next!(gg, oracle)
     end
+    return truncate!(gg)
+end
+
+"""Concatenate two GlyphGrids left-to-right. Grids must agree on number of rows and paths.
+The Oracle is used to connect paths between grids."""
+function concatenate_grids!(oracle::Oracle, gg1::GlyphGrid, gg2::GlyphGrid)
+    if size(gg1.grid, 2) != size(gg2.grid, 2) 
+        error("Grids have discordant number of rows; cannot concatenate.")
+    end
+    if length(gg1.paths) != length(gg2.paths)
+        error("Grids have discordant numbers of paths; cannot concatenate.")
+    end
+
+    # Matrices can be directly concatenated
+    ncols_gg1 = _num_cols(gg1)
+    grid = vcat(
+        gg1.grid[1:ncols_gg1,:], # don't concatenate unused matrix
+        gg2.grid
+    )
+
+    # But paths reference coordinates,
+    # so we need to update coords in the appended part of each path.
+    paths = deepcopy(gg1.paths)
+    for (left_path, right_path) in zip(paths, gg2.paths)
+        append!(left_path, [(c[1] + ncols_gg1, c[2]) for c in right_path])
+    end
+
+    # For connections, we also update coords for connections from the right grid.
+    connections = deepcopy(gg1.connections)
+    for conn in gg2.connections
+        push!(connections, GlyphConnection(
+            (conn.coord1[1] + ncols_gg1, conn.coord1[2]),
+            conn.point1,
+            (conn.coord2[1] + ncols_gg1, conn.coord2[2]),
+            conn.point2
+        ))
+    end
+    # Once the new grid is built, we use the provided Oracle to connect the two sections.
+    gg_combined = GlyphGrid(grid, paths, connections)
+    for (path_ind, path) in enumerate(gg_combined.paths)
+        n_gg1 = length(gg1.paths[path_ind])
+        _connect_glyphs!(gg_combined, oracle, path[n_gg1], path[n_gg1 + 1])
+    end
+    return gg_combined
 end
 
 """Add a deep copy of Glyph at point (i,j) in a GlyphGrid."""
@@ -189,12 +241,4 @@ function _shortest_connection!(oracle::Oracle, ptsA, ptsB, offset, thresh = .01)
         best_dist = min(dist, best_dist)
     end
     return ask!(oracle, pairs)
-end
-
-function grid_from_oracle!(oracle::Oracle)
-    gg = GlyphGrid(2)
-    while !iscomplete(oracle)
-        next!(gg, oracle)
-    end
-    return truncate!(gg)
 end
