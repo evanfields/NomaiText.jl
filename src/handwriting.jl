@@ -42,8 +42,7 @@ function handwrite(ps::PolySpec, h::Real, point_map, rng = default_rng())
     )
 end
 
-"""Handwrite a GlyphGrid. Returns a modified copy.
-TODO: add more docstring."""
+"""Handwrite a GlyphGrid. Returns a modified copy."""
 function handwrite(gg::GlyphGrid, h::Real, rng = default_rng())
     gg = deepcopy(gg)
     # record a different point map for each glyph

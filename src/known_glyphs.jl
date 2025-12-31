@@ -1,10 +1,7 @@
 # all the glyphs we wish to draw
 const KNOWN_GLYPHS = Glyph[]
 
-#=
-Note: this file refers frequently to the core glyphs defined in digit_shapes.jl.
-When reading this file, you'll probably want to refer there simultaneously.
-=#
+# See digit_shapes.jl for the core glyph definitions referenced here.
 
 ##
 # Step 1: all core glyphs are known

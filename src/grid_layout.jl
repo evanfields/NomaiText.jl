@@ -79,8 +79,7 @@ function intersects(lgl::LinearGridLayout, i1, j1, i2, j2)
     return intersects(lgl.grid.grid[i1, j1], lgl.grid.grid[i2, j2], offset)
 end
 
-"""Update the vertical (Y) coordinate for each Glyph. Horizontal (X) coordinates are
-ignored, i.e. Glyphs are treated only in columns."""
+"""Update the Y coordinate for each Glyph. X coordinates are ignored."""
 function _compute_vertical_spacing!(lgl::LinearGridLayout)
     for i in 1:size(lgl.coords, 1)
         _compute_vertical_spacing!(lgl, i)
@@ -110,8 +109,7 @@ function _compute_vertical_spacing!(lgl::LinearGridLayout, i::Int)
     return
 end
 
-"""Update the horizontal (X) coordinate for each Glyph. Vertical (Y) coordinates are used
-to compute which X coordinates are feasible, but are not themselves updated."""
+"""Update the X coordinate for each Glyph. Y coordinates inform feasibility but are not updated."""
 function _compute_horizontal_spacing!(lgl::LinearGridLayout)
     ni, nj = size(lgl.coords)
     # set first column X-coords to zero
