@@ -174,14 +174,25 @@ mutable struct PathGridLayout <: AbstractGridLayout
     bounding_box::BoundingBox
     ps_log::Dict{Float64, Tuple{Point, Float64}}
 
-    PathGridLayout(grid, path) = new(
-        grid,
-        path,
-        2.0,
-        pathlength(path),
-        BoundingBox(path),
-        Dict{Float64, Tuple{Point, Float64}}()
-    )
+    function PathGridLayout(grid, path)
+        max_scale = 2.0
+        pathlen = pathlength(path)
+        bb = BoundingBox(path)
+        ni = size(grid.grid, 1)
+        # Precompute all path points and slopes
+        ps_log = Dict{Float64, Tuple{Point, Float64}}()
+        if ni > 1
+            Δ = (max_scale - 1) / (ni - 1)
+            total_segment_length = (ni - 1) + 1/2 * (ni - 1)^2 * Δ
+            for i in 1:ni
+                cumulative_segment_length = (i - 1) + 1/2 * (i - 1)^2 * Δ
+                k = cumulative_segment_length / total_segment_length
+                # Precompute _pointslope for this k (will be stored in ps_log)
+                ps_log[k] = _compute_pointslope(path, pathlen, k)
+            end
+        end
+        return new(grid, path, max_scale, pathlen, bb, ps_log)
+    end
 end
 
 
@@ -189,22 +200,23 @@ end
 """Compute a tuple `(point, slope)` of the point a factor `k` along a path layout's path
 plus the tangent slope there."""
 function _pointslope(pgl::PathGridLayout, k::Float64)
+    # All values are precomputed, so this is O(1) lookup (or fallback if somehow missing)
     k in keys(pgl.ps_log) && return pgl.ps_log[k]
+    # Fallback: compute on the fly (should rarely happen)
+    return _compute_pointslope(pgl.path, pgl.pathlen, k, pgl.ps_log)
+end
+
+"""Actually compute a point and slope by drawing the path. Called during precomputation."""
+function _compute_pointslope(path, pathlen, k::Float64, ps_log::Dict = Dict{Float64, Tuple{Point, Float64}}())
     center = abs(k - .5) < .01 ? .51 : .5
     delta = .001 * sign(center - k)
     fracs = sort([k, k + delta])
-    ptA = drawpath(
-        pgl.path, fracs[1];
-        action = :none, startnewpath = true, pathlength = pgl.pathlen
-    )
-    ptB = drawpath(
-        pgl.path, fracs[2];
-        action = :none, startnewpath = true, pathlength = pgl.pathlen
-    )
+    ptA = drawpath(path, fracs[1]; action = :none, startnewpath = true, pathlength = pathlen)
+    ptB = drawpath(path, fracs[2]; action = :none, startnewpath = true, pathlength = pathlen)
     newpath()
     ptK = fracs[1] == k ? ptA : ptB
     tup = ptK, slope(ptA, ptB)
-    pgl.ps_log[k] = tup
+    ps_log[k] = tup
     return tup
 end
 
