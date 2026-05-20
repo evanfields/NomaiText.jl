@@ -44,25 +44,22 @@ end
 
 """Handwrite a GlyphGrid. Returns a modified copy."""
 function handwrite(gg::GlyphGrid, h::Real, rng = default_rng())
-    gg = deepcopy(gg)
-    # record a different point map for each glyph
+    # Allocate fresh grid (avoid expensive deepcopy on whole structure)
+    new_grid = Matrix{MaybeGlyph}(nothing, size(gg.grid))
     # (different glyphs may share the same points, since glyphs are roughly 0-centered)
     point_maps = [Dict{Point, Point}() for _ in gg.grid]
     # update each glyph with its own point_map
     for ind in CartesianIndices(gg.grid)
         !hasglyph(gg.grid[ind]) && continue
-        gg.grid[ind] = handwrite(gg.grid[ind], h, point_maps[ind], rng)
+        new_grid[ind] = handwrite(gg.grid[ind], h, point_maps[ind], rng)
     end
-    # update each connection by referring back to glyph-wise point_maps
-    gg.connections = map(gg.connections) do conn
+    # build new connections using the glyph-wise point_maps
+    new_connections = map(gg.connections) do conn
         new_pt1 = point_maps[conn.coord1...][conn.point1]
         new_pt2 = point_maps[conn.coord2...][conn.point2]
-        return GlyphConnection(
-            conn.coord1,
-            new_pt1,
-            conn.coord2,
-            new_pt2
-        )
+        return GlyphConnection(conn.coord1, new_pt1, conn.coord2, new_pt2)
     end
-    return gg
+    # paths are untouched, but return a copy to avoid shared references
+    return GlyphGrid(new_grid, copy(gg.paths), new_connections)
 end
+
